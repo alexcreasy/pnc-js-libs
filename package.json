@@ -12,5 +12,9 @@
   },
   "scripts": {
     "build": "lerna run build"
+  },
+  "dependencies": {
+    "@types/zen-observable": "^0.8.0",
+    "zen-observable": "^0.8.15"
   }
 }

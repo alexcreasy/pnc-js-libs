@@ -1,3 +1,5 @@
+import Observable from "zen-observable";
+import BuildChangedNotification from "./dto/BuildChangedNotification";
 import { BuildStatus } from "./dto/BuildStatus";
 import { JobNotificationProgress } from "./dto/JobNotificationProgress";
 import Notification from "./dto/Notification";
@@ -35,6 +37,26 @@ export default class MessageBus {
         });
     }
 
+    public stream<T extends Notification>(): Observable<T> {
+        return new Observable(observer => {
+            const eventListener = (event: MessageEvent) => {
+                let notification: T;
+                try {
+                    notification = JSON.parse(event.data);
+                } catch (err) {
+                    const newErr = new Error("Message received on PNC WebSocket could not be parsed as JSON");
+                    newErr.stack = `${newErr.stack}\nCaused by: ${err.stack}`;
+                    throw newErr;
+                }
+                observer.next(notification);
+            };
+
+            this.ws.addEventListener("message", eventListener);
+
+            return () => this.ws.removeEventListener("message", eventListener);
+        });
+    }
+
     public onMessage(listener: Consumer<any>): ListenerUnsubscriber {
         const dispatcher: Dispatcher = message => listener(message);
         return this.addDispatcher(dispatcher);
@@ -42,14 +64,32 @@ export default class MessageBus {
 
     public onBuildProgressChange(listener: BuildListener): ListenerUnsubscriber {
 
-        const dispatcher: Dispatcher = notification => {
-            if (isBuildChangedNotification(notification) && notification.progress !== notification.oldProgress) {
-                listener(notification.build, notification);
-            }
-        };
+        // const dispatcher: Dispatcher = notification => {
+        //     if (isBuildChangedNotification(notification) && notification.progress !== notification.oldProgress) {
+        //         listener(notification.build, notification);
+        //     }
+        // };
 
-        return this.addDispatcher(dispatcher);
+        // return this.addDispatcher(dispatcher);
+
+        const subscription = this.stream<BuildChangedNotification>()
+                .filter(n => isBuildChangedNotification(n))
+                .filter(n => n.progress !== n.oldProgress)
+                .subscribe(n => listener(n.build, n));
+
+        return () => subscription.unsubscribe();
     }
+
+    // public onBuildProgressChange(listener: BuildListener): ListenerUnsubscriber {
+
+    //     const dispatcher: Dispatcher = notification => {
+    //         if (isBuildChangedNotification(notification) && notification.progress !== notification.oldProgress) {
+    //             listener(notification.build, notification);
+    //         }
+    //     };
+
+    //     return this.addDispatcher(dispatcher);
+    // }
 
     public onBuildProgress(progress: JobNotificationProgress, listener: BuildListener): ListenerUnsubscriber {
         return this.addDispatcher(notification => {
