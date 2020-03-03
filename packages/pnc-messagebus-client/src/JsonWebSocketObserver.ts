@@ -1,6 +1,6 @@
 import Observable from "zen-observable";
 
-export function newJsonWebSocketObserver(url: string): Observable<object> {
+export function connect(url: string): Observable<object> {
     return new Observable(observer => {
         const ws: WebSocket = new WebSocket(url);
 
