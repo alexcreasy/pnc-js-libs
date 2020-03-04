@@ -15,7 +15,7 @@ describe("JsonWebSocketObserver", () => {
         server = new WS(WS_URL, { jsonProtocol: false });
         mockListener = jest.fn();
 
-        observable = connect(WS_URL);
+        observable = connect(WS_URL, { minReconnectionDelay: 5 });
         subscription = observable.subscribe(mockListener);
         clientSocket = await server.connected;
     });
@@ -65,10 +65,6 @@ describe("JsonWebSocketObserver", () => {
         server.error();
         await server.closed;
 
-        // Speeds the test up by triggering the client's backoff callback early.
-        jest.spyOn(global, "setTimeout");
-        (global as any).setTimeout.mock.calls.forEach(([cb, , ...args]: [any, any]) => cb(...args));
-
         // Verify client was disconnected with an error.
         expect(withError).toBeDefined();
         expect(wasClosed).toBe(true);
@@ -77,7 +73,7 @@ describe("JsonWebSocketObserver", () => {
         server = new WS(WS_URL, { jsonProtocol: false });
         clientSocket = await server.connected;
 
-        // Verify client reconnected
+        // Verify client reconnected ...
         expect(clientSocket.readyState).toEqual(WebSocket.OPEN);
 
         // ... and receives messages from the server once again.
