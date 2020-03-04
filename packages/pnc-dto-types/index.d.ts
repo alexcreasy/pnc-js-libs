@@ -13,6 +13,7 @@ export interface Artifact {
     deployUrl?: string;
     publicUrl?: string;
     targetRepository?: TargetRepository;
+    build?: Build;
 }
 export interface ArtifactImportError {
     artifactId?: string;
@@ -40,6 +41,7 @@ export interface Build {
     scmUrl?: string;
     scmRevision?: string;
     scmTag?: string;
+    buildOutputChecksum?: string;
     project?: ProjectRef;
     scmRepository?: SCMRepository;
     environment?: Environment;
@@ -390,6 +392,7 @@ export interface Parameter {
 export namespace Parameters {
     export type Attribute = string[];
     export type BuildDependencies = boolean;
+    export type BuildType = string;
     export type Callback = string;
     export type ConfigId = string;
     export type DepId = string;

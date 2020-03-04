@@ -1,5 +1,5 @@
-import resolve from 'rollup-plugin-node-resolve';
-
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 export default {
     input: 'src/index.js',
     output: {
@@ -7,5 +7,5 @@ export default {
       format: 'umd',
       name: "PncJsLibs"
     },
-    plugins: [resolve()]
+    plugins: [resolve(), commonjs()]
   };
