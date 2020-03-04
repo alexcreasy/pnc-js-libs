@@ -55,38 +55,33 @@ describe("JsonWebSocketObserver", () => {
     });
 
     it.only("should automatically reconnect when the connection drops", async () => {
-        // tslint:disable-next-line: variable-name
-        //jest.setTimeout(7000);
-        //const _global: any = global as any;
-
-        //jest.spyOn(_global, "setTimeout");
-
         let withError: any;
         let wasClosed: boolean = false;
 
         clientSocket.addEventListener("error", e => withError = e);
         clientSocket.addEventListener("close", () => wasClosed = true);
 
+        // Simulate a server error
         server.error();
         await server.closed;
 
+        // Speeds the test up by triggering the client's backoff callback early.
+        jest.spyOn(global, "setTimeout");
+        (global as any).setTimeout.mock.calls.forEach(([cb, , ...args]: [any, any]) => cb(...args));
 
+        // Verify client was disconnected with an error.
         expect(withError).toBeDefined();
         expect(wasClosed).toBe(true);
 
-        //_global.setTimeout.mock.calls.forEach(([cb, ...args]: [any, any]) => cb(...args));
-
+        // "Fix" the server.
         server = new WS(WS_URL, { jsonProtocol: false });
-
         clientSocket = await server.connected;
 
+        // Verify client reconnected
         expect(clientSocket.readyState).toEqual(WebSocket.OPEN);
 
+        // ... and receives messages from the server once again.
         server.send(JSON.stringify({ test: "test" }));
         expect(mockListener.mock.calls.length).toEqual(1);
     });
 });
-
-function sleep(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
