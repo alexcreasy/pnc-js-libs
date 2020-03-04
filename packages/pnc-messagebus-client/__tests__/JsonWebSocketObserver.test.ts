@@ -54,7 +54,7 @@ describe("JsonWebSocketObserver", () => {
         expect(doSend).toThrow();
     });
 
-    it.only("should automatically reconnect when the connection drops", async () => {
+    it("should automatically reconnect when the connection drops", async () => {
         let withError: any;
         let wasClosed: boolean = false;
 
