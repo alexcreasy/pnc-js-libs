@@ -1,3 +1,4 @@
+import Websocket from "isomorphic-ws";
 import { WS } from "jest-websocket-mock";
 import Observable from "zen-observable";
 import { connect } from "../src/JsonWebSocketObserver";
@@ -20,6 +21,7 @@ describe("JsonWebSocketObserver", () => {
     });
 
     afterEach(async () => {
+        subscription.unsubscribe();
         WS.clean();
     });
 
@@ -51,8 +53,40 @@ describe("JsonWebSocketObserver", () => {
 
         expect(doSend).toThrow();
     });
+
+    it.only("should automatically reconnect when the connection drops", async () => {
+        // tslint:disable-next-line: variable-name
+        //jest.setTimeout(7000);
+        //const _global: any = global as any;
+
+        //jest.spyOn(_global, "setTimeout");
+
+        let withError: any;
+        let wasClosed: boolean = false;
+
+        clientSocket.addEventListener("error", e => withError = e);
+        clientSocket.addEventListener("close", () => wasClosed = true);
+
+        server.error();
+        await server.closed;
+
+
+        expect(withError).toBeDefined();
+        expect(wasClosed).toBe(true);
+
+        //_global.setTimeout.mock.calls.forEach(([cb, ...args]: [any, any]) => cb(...args));
+
+        server = new WS(WS_URL, { jsonProtocol: false });
+
+        clientSocket = await server.connected;
+
+        expect(clientSocket.readyState).toEqual(WebSocket.OPEN);
+
+        server.send(JSON.stringify({ test: "test" }));
+        expect(mockListener.mock.calls.length).toEqual(1);
+    });
 });
 
-function timeout(ms: number) {
+function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }

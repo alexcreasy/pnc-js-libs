@@ -1,9 +1,19 @@
+import WebSocket from "isomorphic-ws";
+import ReconnectingWebSocket, { Options } from "reconnecting-websocket";
 import Observable from "zen-observable";
 
-export function connect(url: string): Observable<object> {
-    return new Observable(observer => {
-        const ws: WebSocket = new WebSocket(url);
+const defaultRWSOptions: Options = {
+    WebSocket,
+    maxReconnectionDelay: 30000,
+    maxRetries: 10
+};
 
+export function connect(url: string, options?: Options): Observable<object> {
+    const finalOptions: Options = Object.assign({}, defaultRWSOptions, options);
+
+    return new Observable(observer => {
+
+        const ws = new ReconnectingWebSocket(url, [], finalOptions);
         ws.addEventListener("message", event => {
             let obj: object;
             try {
